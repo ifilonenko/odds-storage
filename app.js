@@ -1,3 +1,12 @@
+var azure = require('azure-storage');
+var nconf = require('nconf');
+nconf.env()
+     .file({ file: 'config.json', search: true });
+var tableName = nconf.get("TABLE_NAME");
+var partitionKey = nconf.get("PARTITION_KEY");
+var accountName = nconf.get("STORAGE_NAME");
+var accountKey = nconf.get("STORAGE_KEY");
+
 var express = require('express');
 var path = require('path');
 var favicon = require('static-favicon');
@@ -21,8 +30,12 @@ app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
-app.use('/users', users);
+var Post = require('./routes/post');
+var Video = require('./models/video');
+var video = new Video(azure.createTableService(accountName, accountKey), tableName, partitionKey);
+var post = new Post(video);
+
+app.post('/addvideo', post.addvideo.bind(post));
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {
